@@ -1,0 +1,40 @@
+:root{
+    --color:blue;
+}
+body{
+    margin:0;
+    
+}
+#usernameUser{
+    display: none;
+    background-color: red;
+   padding: 0px; 
+   flex-direction: column;
+}
+.topbar{
+    font-size: 25px;
+    display: flex;
+    justify-content: space-between;
+}
+.topbar-item{
+    color:bisque;
+    padding: 5px;
+    background:rgb(19, 214, 94);
+    margin:0px 10px;
+}
+.search-area{
+    margin-top: 200px;
+    display: flex;
+    justify-content: center;
+}
+.search-area >input{
+    height: 40px;
+    width: 400px;
+}
+.produse{
+    padding: 5px;
+   margin:auto;
+   align-self: center; 
+   border-style: solid;
+   max-width: 1500px;
+}

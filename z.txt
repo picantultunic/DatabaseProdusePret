@@ -1,0 +1,47 @@
+// const http = require('http');
+// const fs = require('fs')
+
+// const getText = async (path) => {
+//     return new Promise((resolve,reject)=>{
+//         fs.readFile(path,'utf-8',(err,data)=>{
+//             if(err){
+//                 reject(err);
+//             }else{
+//                 resolve(data);
+//             }
+//         })
+//     })
+// }
+// async function test(x){
+    
+// }
+// const server = http.createServer((req, res) => {
+//     console.log(req.url);
+//     if(req.url=='/text.css')
+//     getText("."+req.url).then((resolve)=>{res.end(resolve)}).catch(()=>{res.end("oups")})
+//     else if(req.url=='/text.html'||req.url=='/text')
+//     getText("./"+req.url+".html").then((resolve)=>{res.end(resolve)}).catch(()=>{res.end("oups")})
+//     else if(req.url=='/text.js')
+//     getText("./"+req.url).then((resolve)=>{res.end(resolve)}).catch(()=>{res.end("oups")})
+//     else
+//     res.end("oups");
+
+//     // if(req=="text.css")
+//     // getText("./"+req.url+".css").then((resolve)=>{res.end(resolve)}).catch(()=>{res.end("oups")})
+    
+// });
+
+const express = require('express')
+const path = require("path")
+
+const app = express()
+
+app.use(express.static('./public'))
+
+app.get('*',(req,res)=>{
+    res.status(404).send("ceva nu a mers")
+})
+
+app.listen(5000,()=>{
+    console.log("server is up");
+})
