@@ -1,3 +1,6 @@
+/**
+ * note: ar trebuii sa fie adaugat un router pentru verificarea tokenului
+ */
 //librari
 const express = require('express')
 const app = express()
@@ -5,6 +8,10 @@ const axios= require("axios");
 const fetch=require('node-fetch');
 const path=require('path');
 const Cookie=require('cookie-parser');
+const altex=require('./ApiAltex');
+const { magainNume } = require('./ApiAltex');
+const portSite=5000;
+const portServer=3000;
 //const jwt;
 //variabile
 var svUrl="http://localhost:3000";
@@ -24,9 +31,7 @@ async function sendRequestData(x){
     
     return response
  }
-const magazineNume=()=>{
-    return ["altex","emag","pcgarage"];
-}
+const magazineNume=["altex","emag","pcgarage"]
 app.use(express.static(path.join(__dirname, 'public')))
 app.use(express.urlencoded({
     extended: true
@@ -54,7 +59,6 @@ app.get('/test',(req,res)=>{
 // })
 app.get("/api/get/database/produsmagazine/:cod_produs",(req,res)=>{
     const cod=req.params.cod_produs;
-    console.log(req.cookies);
     // console.log(cod)
     if(cod==undefined){
         console.log(1)
@@ -67,7 +71,6 @@ app.get("/api/get/database/produsmagazine/:cod_produs",(req,res)=>{
             res.sendStatus(404);
             return;
         }
-        console.log(3)
         var magazine=(r.data).map(x=>x.nume_magazin)
         // console.log(magazine);
         // console.log(r)
@@ -75,6 +78,49 @@ app.get("/api/get/database/produsmagazine/:cod_produs",(req,res)=>{
     }).catch(err=>{
         console.log("eroare")
         res.status(404).json("nu a mers");
+    })
+})
+app.get('/api/get/existentaProdusului/:codProdus',async (req,res)=>{
+    const {codProdus}=req.params;
+    if(codProdus==undefined||codProdus==""){
+        res.sendStatus(403)
+        return;
+    }
+    console.log(codProdus)
+    axios.get(`${svUrl}/api/existentaProdusului/${svCheie}/${codProdus}`)
+    .then(r=>{
+            res.sendStatus(200);
+            return;
+    }).catch(err=>{
+        res.sendStatus(404);
+        console.log("o puscat :"+err)
+        return;
+    })
+})
+app.get('/api/get/database/cautaProdus/:magazin/:codProdus',async (req,res)=>{
+    //o sa se faca cerere pentru istoricul preturilor de la fiecare magazin , si cand da load o sa faca
+    //separat pentru celelalte deoarece o sa ia mult pana 
+    console.log(req.params.codProdus)
+    const {codProdus,magazin}=req.params;
+    
+    if(codProdus==undefined||codProdus==""||magazin==undefined||magazin==""){
+        res.sendStatus(403)
+        return;
+    }
+
+    axios.get(`${svUrl}/api/preiaProdusCuPreturi/${svCheie}/${magazin}/${codProdus}`).then(r=>{
+        var preturi=r.data;
+        preturi.forEach((part,index,preturi)=>{
+            preturi[index].timp=preturi[index].timp.replace(/\D/g,'');
+        })
+        preturi.sort((a,b)=>{
+            return a.timp - b.timp;
+        })
+        console.log(preturi)
+        res.json(preturi)
+    }).catch(err=>{
+        console.log("err:"+err)
+        res.sendStatus(404)
     })
 })
 app.get('/data/:id',(req,res)=>{
@@ -100,6 +146,34 @@ app.get('/data/:id',(req,res)=>{
     }
     res.json(data);
     console.log("sfarsit")
+})
+app.get('/api/get/preiaDateProdus',async (req,res)=>{
+    var codProdus = req.cookies.codProdus;
+    console.log(codProdus);
+    if(codProdus==undefined||codProdus==""){
+        // codProdus="82NL000YRM"
+        res.sendStatus(403)
+        return;
+    }
+    console.log(`http://localhost:${portSite}/api/get/existentaProdusului/${codProdus}`)
+    var infoProdus;
+    var verificareExistenta=await axios.get(`http://localhost:${portSite}/api/get/existentaProdusului/${codProdus}`)
+    .then(r=>{return true})
+    .catch(()=>{return false;})
+    if(!verificareExistenta){
+        res.status(404).json(null)
+        return;
+    }
+    axios.get(`${svUrl}/api/infoProdus/${svCheie}/${codProdus}`).then(r=>{
+        console.log(r.data)
+        res.json(r.data);
+    }).catch(err=>{
+        res.status(404).json(null)
+    })
+    console.log(verificareExistenta)
+    // axios.get(`${svUrl}/`)
+    // res.status(200).send(data)
+    
 })
 // app.get("/adaugaproduse",(req,res)=>{})
 
@@ -129,49 +203,54 @@ app.post('/api/post/login/',(req,res)=>{
     
 })
 app.use(express.json());
-app.post('/api/post/adaugareProdus/:cod',(req,res)=>{
-    const token = req.cookies.token;
-    console.log("inainte de token");
-    if(token!=tokenGlobal){
-        res.status(403).json({"err":"ceva nu a mers token"})
-        console.log("tokenul invalid")
-        return;
-    }
-    const codProdus=req.params.cod;
-    console.log("inainte"+codProdus);
-    if(codProdus==undefined||codProdus==""){
-        res.status(404).json({"err":"ceva nu a mers"})
-        return;
-    }
-    console.log("dupa"+codProdus);
-    if(codProdus.search("https:")!=-1){
-        async ()=>{
-            //aici preiei codul produsului 
-            var magazinIndex;
-            for(i=0;i<magazineNume.length;i++)
-                if(codProdus.search(magazineNume[i])!=-1){
-                    magazinIndex=i;
-                    break;
-                }
-            switch(i){
-                case 0:
-                    const altex=require('./ApiAltex')
-                    codProdus=await altex.linkPreluareCod(codProdus);
-                break;
-                case 1:;
-                case 2:;
-                default:
-                    res.sendStatus(400);
-                    return;
-            }
-            // axios.post(`${svUrl}/api/adaugaProdus/${svCheie}/${codProdus}`);
-            console.log(codProdus);
-        }
-    }else{
-    //axios.post(`${svUrl}/api/adaugaProdus/${svCheie}/${codProdus}`)
-    console.log("a introdus dar fara url")}
-    res.sendStatus(200);
-})
+
+//codul de mai jos este o versiune mai veche dar a fost inlocuit deoarece nu 
+//putea sa accepte linkuri si este rescris mai jos . Codul acesta mai ramane
+//in caz ca mai ai nevoie
+
+// app.post('/api/post/adaugareProdus/:cod',(req,res)=>{
+//     const token = req.cookies.token;
+//     console.log("inainte de token");
+//     if(token!=tokenGlobal){
+//         res.status(403).json({"err":"ceva nu a mers token"})
+//         console.log("tokenul invalid")
+//         return;
+//     }
+//     const codProdus=req.params.cod;
+//     console.log("inainte"+codProdus);
+//     if(codProdus==undefined||codProdus==""){
+//         res.status(404).json({"err":"ceva nu a mers"})
+//         return;
+//     }
+//     console.log("dupa"+codProdus);
+//     if(codProdus.search("https:")!=-1){
+//         async ()=>{
+//             //aici preiei codul produsului 
+//             var magazinIndex;
+//             for(i=0;i<magazineNume.length;i++)
+//                 if(codProdus.search(magazineNume[i])!=-1){
+//                     magazinIndex=i;
+//                     break;
+//                 }
+//             switch(i){
+//                 case 0:
+//                     const altex=require('./ApiAltex')
+//                     codProdus=await altex.linkPreluareCod(codProdus);
+//                 break;
+//                 case 1:;
+//                 case 2:;
+//                 default:
+//                     res.sendStatus(400);
+//                     return;
+//             }
+//             // axios.post(`${svUrl}/api/adaugaProdus/${svCheie}/${codProdus}`);
+//             console.log(codProdus);
+//         }
+//     }else{
+//     //axios.post(`${svUrl}/api/adaugaProdus/${svCheie}/${codProdus}`)
+//     console.log("a introdus dar fara url")}
+//     res.sendStatus(200);
+// })
 
 
 app.post('/api/post/adaugareProdusJSON/',(req,res)=>{
@@ -181,26 +260,26 @@ app.post('/api/post/adaugareProdusJSON/',(req,res)=>{
         console.log("tokenul invalid")
         return;
     }
-
     var codProdus=req.body.cod;
+    var numeMagazin=req.body.magazin;
     if(codProdus==undefined||codProdus==""){
         res.status(404).json({"err":"ceva nu a mers"})
         return;
     }
     
     if(codProdus.search("https:")!=-1){
-        console.log("if")
         const func=async ()=>{
             //aici preiei codul produsului 
             var magazinIndex;
+            console.log(`magazinNume len :${magazineNume.length}`)
             for(i=0;i<magazineNume.length;i++)
                 if(codProdus.search(magazineNume[i])!=-1){
+                    console.log(i)
                     magazinIndex=i;
                     break;
                 }
             switch(i){
                 case 0:
-                    const altex=require('./ApiAltex')
                     codProdus= await altex.linkPreluareCod(codProdus);
                 break;
                 case 1:;
@@ -209,14 +288,54 @@ app.post('/api/post/adaugareProdusJSON/',(req,res)=>{
                     res.sendStatus(400);
                     return;
             }
-            axios.post(`${svUrl}/api/adaugaProdus/${svCheie}/${codProdus}`);
-            console.log("codProdus:"+codProdus);
+            console.log("magazi Index:"+magazinIndex)
+            console.log("magazin nume:"+magazineNume[magazinIndex])
+            console.log("co produs:"+codProdus)
+            axios.post(`${svUrl}/api/adaugaProdus/${svCheie}/`,
+            {codProdus:`${codProdus}`,numeMagazin:`${magazineNume[magazinIndex]}`})
+                .then(()=>{
+                    console.log("s=a trimis")
+                    res.sendStatus(200);})
+                .catch(()=>{
+                    console.log("nu s-a formatat bine")
+                    res.sendStatus(404);
+                })
         }
         func();
     }else{
-    axios.post(`${svUrl}/api/adaugaProdus/${svCheie}/${codProdus}`)
-    console.log("a introdus dar fara url")}
-    res.sendStatus(200);
+        const func=async ()=>{
+            if(numeMagazin==undefined||numeMagazin==""){
+                res.sendStatus(404)
+                return;
+            }
+            var magazinIndex;
+                for(i=0;i<magazineNume.length;i++)
+                    if(codProdus.search(magazineNume[i])!=-1){
+                        magazinIndex=i;
+                        break;
+                    }
+            switch(i){
+                    case 0:
+                        codProdus= altex.siteCodToUniversal(codProdus);
+                    break;
+                    case 1:;
+                    case 2:;
+                    default:
+                        res.sendStatus(400);
+                        return;
+                }
+            console.log(codProdus);
+            axios.post(`${svUrl}/api/adaugaProdus/${svCheie}/`,{cod:`${codProdus}`,magazin:`${numeMagazin}`})
+                .then(()=>{
+                    console.log("s-a trimis cu succes catre server")
+                    res.sendStatus(200);})
+                .catch(()=>{
+                    console.log("serverul nu a acceptat datele dintr-un oarecare motiv")
+                    res.sendStatus(404);
+                })
+        }
+        func()
+    }
 })
 
 app.get('*',(req,res)=>{

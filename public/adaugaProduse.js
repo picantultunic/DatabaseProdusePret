@@ -10,9 +10,10 @@ if(cookie.isLog=="false"||cookie.isLog==undefined){
 var siteIp="http://localhost:5000"
 function adaugaProdus(id){
    var produsCod=document.getElementById("textbox").value;
+   var numeMagazin=document.getElementById("numeMagazin").value;
    fetch(`${siteIp}/api/post/adaugareProdusJSON/`,{
       method:'POST',
-      body:JSON.stringify({cod:`${produsCod}`}),
+      body:JSON.stringify({cod:`${produsCod}`,magazin:`${numeMagazin}`}),
       headers: {
          'Content-Type': 'application/json'
        },

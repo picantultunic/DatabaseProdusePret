@@ -6,17 +6,18 @@
         <div class="topbar">
             <a href="adaugaProduse.html"><span class="topbar-item">adauga produse</span></a>
             <span class="topbar-item">database de preturi</span>
-            <a href="login.html">
-                <span id="loginbtn"class="topbar-item">login</span>
-            </a>
-            <div id="usernameUser">
-                <span id="usernameUserUser">username</span>
-                <button onclick="logOut()">sign out</button>
-            </div>
+            <span  >
+                <a href="login.html"><span id="loginbtn"class="topbar-item">login</span></a>
+                <span id="usernameUser" class="topbar-item">
+                    <span id="usernameUserUser">username</span>
+                    <button onclick="logOut()">sign out</button>
+                </span>
+            </span>
+            
         </div>
         <div class="search-area">
             <input type="text" name="search" id="textbox" placeholder="link, cod sau keyword">
-            <button type="button" onclick="aflaMagazineProdus('textbox')">cauta</button>
+            <button type="button" onclick="cautaProdus('textbox')">cauta</button>
         </div>
         <div class="produse" id="produse-container">
             da

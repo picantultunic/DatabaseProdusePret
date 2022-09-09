@@ -1,0 +1,11 @@
+#pozaProdus{
+   width: 300px;
+}
+#numeProdus{
+   background-color: red;
+}
+.dateProdus{
+   background-color: blue;
+   display: flex;
+   flex-direction: column;
+}

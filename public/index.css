@@ -6,15 +6,14 @@ body{
     
 }
 #usernameUser{
-    display: none;
-    background-color: red;
-   padding: 0px; 
+   background-color: red;
    flex-direction: column;
 }
 .topbar{
     font-size: 25px;
     display: flex;
-    justify-content: space-between;
+    justify-content: space-around;
+    
 }
 .topbar-item{
     color:bisque;
